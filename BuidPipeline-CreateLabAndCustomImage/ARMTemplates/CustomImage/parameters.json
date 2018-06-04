@@ -1,0 +1,24 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "labName": {
+      "value": "$(labName)"
+    },
+    "vhdFileUri": {
+      "value": "$(vhdFileUri)"
+    },
+    "imageOsType": {
+      "value": "windows"
+    },
+    "isVhdSysPrepped": {
+      "value": true
+    },
+    "imageName": {
+      "value": "$(labImageName)"
+    },
+    "imageDescription": {
+      "value": "$(labImageDescription)"
+    }
+  }
+}

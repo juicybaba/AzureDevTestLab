@@ -1,0 +1,162 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vmNamePrefix": {
+            "type": "string",
+            "defaultValue": "LabVM-",
+            "metadata": {
+                "description": "Prefix of the VM name"
+            }
+        },
+        "labName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the DevTest Lab"
+            }
+        },
+        "labImageName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the custom image used for creating this VM"
+            }
+        },
+        "size": {
+            "type": "string",
+            "defaultValue": "Standard_B2s",
+            "metadata": {
+                "description": "The size of the VM"
+            }
+        },
+        "userName": {
+            "type": "string",
+            "metadata": {
+                "description": "The username of the built-in local admin of the VM"
+            }
+        },
+        "userEmailAddress": {
+            "type": "string",
+            "metadata": {
+                "description": "The email address of the invited lab user"
+            }
+        },
+        "userObjectId": {
+            "type": "string",
+            "metadata": {
+                "description": "The object ID of the invited lab user"
+            }
+        },
+        "userPrincipalName": {
+            "type": "string",
+            "metadata": {
+                "description": "The principal name of the invited lab user"
+            }
+        },
+        "Run_PowerShell.scriptFileUris": {
+            "type": "string",
+            "defaultValue": "[[\"https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/201-vm-winrm-windows/ConfigureWinRM.ps1\", \"https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/201-vm-winrm-windows/makecert.exe\", \"https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/201-vm-winrm-windows/winrmconf.cmd\"]"
+        },
+        "Run_PowerShell.scriptToRun": {
+            "type": "string",
+            "defaultValue": "ConfigureWinRM.ps1"
+        }
+    },
+    "variables": {
+        "labSubnetName": "[concat(variables('labVirtualNetworkName'), 'Subnet')]",
+        "labVirtualNetworkId": "[resourceId('Microsoft.DevTestLab/labs/virtualnetworks', parameters('labName'), variables('labVirtualNetworkName'))]",
+        "labVirtualNetworkName": "[concat('Dtl', parameters('labName'))]",
+        "labImageId": "[resourceId('microsoft.devtestlab/labs/customimages', parameters('labName'), parameters('labImageName'))]",
+        "vmNameSuffix": "[uniquestring(parameters('userEmailAddress'))]",
+        "vmShortName": "[substring(concat(parameters('vmNamePrefix'), variables('vmNameSuffix')),0,15)]",
+        "vmId": "[resourceId ('Microsoft.DevTestLab/labs/virtualmachines', parameters('labName'), variables('vmShortName'))]",
+        "vmLongName": "[concat(parameters('labName'), '/', variables('vmShortName'))]",
+        "hostDNSNameScriptArgument": "[concat('*.',resourceGroup().location,'.cloudapp.azure.com')]",
+        "vmStudentPassword": "[concat(substring(uniquestring(parameters('userObjectId')), 3, 5), '@Alithya')]"
+    },
+  "resources": [
+    {
+        "comments": "The main section of the lab VM",
+        "apiVersion": "2017-04-26-preview",
+        "type": "Microsoft.DevTestLab/labs/virtualmachines",
+        "name": "[variables('vmLongName')]",
+        "location": "[resourceGroup().location]",
+        "tags": {
+            "AutoStartOn": "true",
+            "userEmailAddress": "[parameters('userEmailAddress')]"
+        },
+        "properties": {
+            "labVirtualNetworkId": "[variables('labVirtualNetworkId')]",
+            "notes": "[parameters('labImageName')]",
+            "customImageId": "[variables('labImageId')]",
+            "size": "[parameters('size')]",
+            "userName": "[parameters('userName')]",
+            "password": "[variables('vmStudentPassword')]",
+            "ownerObjectId": "[parameters('userObjectId')]",
+            "ownerUserPrincipalName": "[parameters('userPrincipalName')]",
+            "isAuthenticationWithSshKey": false,
+            "artifacts": [
+                {
+                    "artifactId": "[resourceId('Microsoft.DevTestLab/labs/artifactSources/artifacts', parameters('labName'), 'Public Repo', 'windows-run-powershell')]",
+                    "parameters": [
+                        {
+                            "name": "scriptFileUris",
+                            "value": "[parameters('Run_PowerShell.scriptFileUris')]"
+                        },
+                        {
+                            "name": "scriptToRun",
+                            "value": "[parameters('Run_PowerShell.scriptToRun')]"
+                        },
+                        {
+                            "name": "scriptArguments",
+                            "value": "[variables('hostDNSNameScriptArgument')]"
+                        }
+                    ]
+                }
+            ],
+            "labSubnetName": "[variables('labSubnetName')]",
+            "disallowPublicIpAddress": false,
+            "storageType": "Premium",
+            "allowClaim": false
+        },
+        "resources": [
+            {
+                "comments": "the auto-shutdown schedule of the lab VM, required for email notification",
+                "apiVersion": "2017-04-26-preview",
+                "name": "LabVmsShutdown",
+                "type": "schedules",
+                "properties": {
+                    "status": "Enabled",
+                    "taskType": "LabVmsShutdownTask",
+                    "timeZoneId": "Eastern Standard Time",
+                    "dailyRecurrence": {
+                        "time": "17:00"
+                    },
+                    "notificationSettings": {
+                        "status": "Enabled",
+                        "timeInMinutes": 30,
+                        "webhookUrl": "",
+                        "emailRecipient": "[parameters('userEmailAddress')]"
+                    }
+                },
+                "dependsOn": [
+                    "[resourceId('Microsoft.DevTestLab/labs/virtualmachines', parameters('labName'), variables('vmShortName'))]"
+                ]
+            }
+        ]
+    }
+  ],
+    "outputs": {
+        "labVMId": {
+            "type": "string",
+            "value": "[variables('vmId')]"
+        },
+        "vmShortName": {
+            "type": "string",
+            "value": "[variables('vmShortName')]"
+        },
+        "vmStudentPassword": {
+            "type": "string",
+            "value": "[variables('vmStudentPassword')]"
+        }
+    }
+}

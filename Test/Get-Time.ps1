@@ -1,0 +1,1 @@
+Get-Date | Out-File C:\time.txt

@@ -1,0 +1,6 @@
+{
+  "itemDisplayName": "Lab VM ARM template",
+  "description": "ARM template for the virtual machine used in the DB Dev training DevTest Lab.",
+  "summary": "ARM template for the virtual machine, with auto-shutdown notification enabled, notification email recipient specified, userEmailAddress tagged, and owner assigned.",
+  "createdBy": "Ding Liu"
+}

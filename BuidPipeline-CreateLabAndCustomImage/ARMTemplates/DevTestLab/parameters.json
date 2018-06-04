@@ -1,0 +1,48 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "labName": {
+            "value": ""
+        },
+        "tagValues": {
+            "value": {
+                "Environment": "Development",
+                "Dept": "Finance"
+            }
+        },
+        "autoShutdownSettings": {
+            "value": {
+                "status": "Enabled",
+                "timeZoneID": "Eastern Standard Time",
+                "shutdownTime": "17:00",
+                "notificationStatus": "disabled",
+                "notificationWebHookUrl": "",
+                "notificationEmailRecipient": "user@example.com"
+            }
+        },
+        "autoStartSettings": {
+            "value": {
+                "status": "Enabled",
+                "timeZoneID": "Eastern Standard Time",
+                "time": "08:45",
+                "weekdays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+            }
+        },
+        "costThresholdSettings": {
+            "value": {
+                "status": "Disabled",
+                "thresholdValue": "100"
+            }
+        },
+        "maxAllowedVmsPerUser": {
+            "value": 1
+        },
+        "maxAllowedVmsPerLab": {
+            "value": 999
+        },
+        "allowedVmSizes": {
+            "value": "\"Standard_B2s\", \"Standard_B2ms\""
+        }
+    }
+}

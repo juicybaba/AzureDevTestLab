@@ -1,0 +1,280 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "labName": {
+            "type": "string",  
+            "metadata": {
+                "description": "The name of DevTest Lab."
+            }
+        },
+        "tagValues": {
+            "type": "object",
+            "defaultValue": {
+                "Environment": "Development",
+                "Dept": "Finance"
+            },
+            "metadata": {
+                "description": "The tags of DevTest Lab."
+            }
+        },
+        "autoShutdownSettings": {
+            "type": "object",
+            "defaultValue": {
+                "status": "Enabled",
+                "timeZoneID": "Eastern Standard Time",
+                "shutdownTime": "17:00",
+                "notificationStatus": "Disabled",
+                "notificationWebHookUrl": "",
+                "notificationEmailRecipient": "user@example.com"
+            },
+            "metadata": {
+                "description": "Auto-shutdown policy of the lab."
+            }
+        },
+        "autoStartSettings": {
+            "type": "object",
+            "defaultValue": {
+                "status": "Enabled",
+                "timeZoneID": "Eastern Standard Time",
+                "time": "08:45",
+                "weekdays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+            },
+            "metadata": {
+                "description": "Auto-Start policy of the lab."
+            }
+        },
+        "costThresholdSettings": {
+            "type": "object",
+            "defaultValue": {
+                "status": "Disabled",
+                "thresholdValue": "100"
+            },
+            "metadata": {
+                "description": "Cost threshold and alerts of the lab."
+            }
+        },
+        "maxAllowedVmsPerUser": {
+            "type": "int",
+            "defaultValue": 1,
+            "minValue": 0,
+            "metadata": {
+                "description": "The maximum number of VMs allowed per user."
+            }
+        },
+        "maxAllowedVmsPerLab": {
+            "type": "int",
+            "minValue": 0,
+            "defaultValue": 999,
+            "metadata": {
+                "description": "The maximum number of VMs allowed per lab."
+            }
+        },
+        "allowedVmSizes": {
+            "type": "string",
+            "defaultValue": "\"Standard_B2s\", \"Standard_B2ms\"",
+            "minLength": 3,
+            "metadata": {
+                "description": "A comma-separated list of VM sizes that are allowed in the lab."
+            }
+        }
+    },
+    "variables": {
+        "labVirtualNetworkName": "[concat('Dtl', parameters('labName'))]",
+        "labVirtualNetworkId": "[resourceId('Microsoft.Network/virtualNetworks', variables('labVirtualNetworkName'))]",
+        "labSubnetName": "[concat(variables('labVirtualNetworkName'), 'Subnet')]",
+        "labSubnetId": "[concat(variables('labVirtualNetworkId'), '/subnets/', variables('labSubnetName'))]"
+    },
+    "resources": [
+        {
+            "comments": "The main section of the DevTest Lab",
+            "apiVersion": "2017-04-26-preview",
+            "name": "[parameters('labName')]",
+            "type": "Microsoft.DevTestLab/labs",
+            "location": "[resourceGroup().location]",
+            "tags": "[parameters('tagValues')]",
+            "properties": {
+                "labStorageType": "Premium"
+            },
+            "resources": [
+                {
+                    "comments": "auto-shutdown schedule, must be used with the associated notificationChannels resource",
+                    "apiVersion": "2017-04-26-preview",
+                    "name": "LabVmsShutdown",
+                    "location": "[resourceGroup().location]",
+                    "type": "schedules",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.DevTestLab/labs', parameters('labName'))]"
+                    ],
+                    "properties": {
+                        "status": "[parameters('autoShutdownSettings').status]",
+                        "timeZoneId": "[parameters('autoShutdownSettings').timeZoneID]",
+                        "dailyRecurrence": {
+                            "time": "[parameters('autoShutdownSettings').shutdownTime]"
+                        },
+                        "taskType": "LabVmsShutdownTask",
+                        "notificationSettings": {
+                            "status": "[parameters('autoShutdownSettings').notificationStatus]",
+                            "timeInMinutes": 30
+                        }
+                    }
+                },
+                {
+                    "comments": "Notification setting for the auto-shutdown schedule, must be used with the accosiated schedule itself",
+                    "apiVersion": "2017-04-26-preview",
+                    "name": "AutoShutdown",
+                    "type": "notificationChannels",
+                    "location": "[resourceGroup().location]",
+                    "properties": {
+                        "description": "This option will send notifications to the specified email address and/or webhook URL before auto-shutdown of virtual machines occurs.",
+                        "events": [
+                            {
+                                "eventName": "Autoshutdown"
+                            }
+                        ],
+                        "webHookUrl": "[parameters('autoShutdownSettings').notificationWebHookUrl]",
+                        "emailRecipient": "[parameters('autoShutdownSettings').notificationEmailRecipient]"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.DevTestLab/labs', parameters('labName'))]"
+                    ]
+                },
+                {
+                    "comments": "Auto-start schedule of the DevTest Lab",
+                    "apiVersion": "2017-04-26-preview",
+                    "name": "LabVmAutoStart",
+                    "type": "schedules",
+                    "dependsOn": [
+                      "[resourceId('Microsoft.DevTestLab/labs', parameters('labName'))]"
+                    ],
+                    "properties": {
+                      "status": "[parameters('autoStartSettings').status]",
+                      "taskType": "LabVmsStartupTask",
+                      "timeZoneId": "[parameters('autoStartSettings').timeZoneID]",
+                      "WeeklyRecurrence": {
+                        "time": "[parameters('autoStartSettings').time]",
+                        "weekdays": "[parameters('autoStartSettings').weekdays]"
+                      }
+                    }
+                },
+                {
+                    "comments": "Cost target and thresholds",
+                    "apiVersion": "2017-04-26-preview",
+                    "name": "targetCost",
+                    "type": "costs",
+                    "properties": {
+                      "targetCost": {
+                        "cycleType": "CalendarMonth",
+                        "status": "[parameters('costThresholdSettings').status]",
+                        "target": "[parameters('costThresholdSettings').thresholdValue]",
+                        "costThresholds": [
+                          {
+                            "thresholdId": "96c08eae-885f-4a46-a15d-9dc991a32cbf",
+                            "thresholdStatus": "Disabled",
+                            "displayOnChart": "Enabled",
+                            "sendNotificationWhenExceeded": "Enabled",
+                            "percentageThreshold": { "thresholdValue": 75 }
+                          },
+                          {
+                            "thresholdId": "5ef03748-2e10-4b3c-afc2-cc766abf2d5d",
+                            "thresholdStatus": "Disabled",
+                            "displayOnChart": "Enabled",
+                            "sendNotificationWhenExceeded": "Enabled",
+                            "percentageThreshold": { "thresholdValue": 100 }
+                          },
+                          {
+                            "thresholdId": "b0bf180e-2e09-4073-8040-56e8a23dcd84",
+                            "thresholdStatus": "Disabled",
+                            "displayOnChart": "Disabled",
+                            "sendNotificationWhenExceeded": "Disabled",
+                            "percentageThreshold": { "thresholdValue": 125 }
+                          }
+                        ]
+                      }
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.DevTestLab/labs', parameters('labName'))]"
+                    ]
+                },
+                {
+                    "comments": "Cost conrol policy: max number of VMs allowed per user",
+                    "apiVersion": "2017-04-26-preview",
+                    "name": "default/MaxVmsAllowedPerUser",
+                    "type": "policySets/policies",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.DevTestLab/labs', parameters('labName'))]"
+                    ],
+                    "properties": {
+                        "description": "",
+                        "factName": "UserOwnedLabVmCount",
+                        "threshold": "[string(parameters('maxAllowedVmsPerUser'))]",
+                        "evaluatorType": "MaxValuePolicy",
+                        "status": "enabled"
+                    }
+                },
+                {
+                    "comments": "Cost control policy: max number of VMs allowed per lab",
+                    "apiVersion": "2017-04-26-preview",
+                    "name": "default/MaxVmsAllowedPerLab",
+                    "type": "policySets/policies",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.DevTestLab/labs', parameters('labName'))]"
+                    ],
+                    "properties": {
+                        "description": "",
+                        "factName": "LabVmCount",
+                        "threshold": "[string(parameters('maxAllowedVmsPerLab'))]",
+                        "evaluatorType": "MaxValuePolicy",
+                        "status": "enabled"
+                    }
+                },
+                {
+                    "comments": "Cost control policy: allowed VM sizes in the DevTest Lab",
+                    "apiVersion": "2017-04-26-preview",
+                    "name": "default/AllowedVmSizesInLab",
+                    "type": "policySets/policies",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.DevTestLab/labs', parameters('labName'))]"
+                    ],
+                    "properties": {
+                        "description": "",
+                        "factName": "LabVmSize",
+                        "threshold": "[concat('[', trim(parameters('allowedVmSizes')), ']')]",
+                        "evaluatorType": "AllowedValuesPolicy",
+                        "status": "enabled"
+                    }
+                },
+                {
+                    "comments": "The virtual network that associated with the DevTest Lab",
+                    "apiVersion": "2017-04-26-preview",
+                    "name": "[concat('Dtl', parameters('labName'))]",
+                    "type": "virtualNetworks",
+                    "location": "[resourceGroup().location]",
+                    "properties": {
+                        "subnetOverrides": [
+                          {
+                            "name": "[variables('labSubnetName')]",
+                            "resourceId": "[variables('labSubnetId')]",
+                            "useInVmCreationPermission": "Allow",
+                            "usePublicIpAddressPermission": "Allow"
+                          }
+                        ]
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.DevTestLab/labs', parameters('labName'))]"
+                    ]
+                }
+            ]
+        }
+    ],
+    "outputs": {
+        "OutputLabName": {
+            "type": "string",
+            "value": "[parameters('labName')]"
+        },
+        "OutputLabResourceId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.DevTestLab/labs', parameters('labName'))]"
+        }
+    }
+}

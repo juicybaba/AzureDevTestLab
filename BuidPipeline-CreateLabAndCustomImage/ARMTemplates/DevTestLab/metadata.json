@@ -1,0 +1,6 @@
+{
+  "itemDisplayName": "DevTest Lab ARM template for internal DB Dev training Coure",
+  "description": "ARM Template for the DevTest Lab used by internal DB Dev training Coure.",
+  "summary": "ARM template for the DevTest Lab, along with its tags and cost control policies.",
+  "createdBy": "Ding Liu"
+}

@@ -1,0 +1,30 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vmNamePrefix": {
+            "value": "$(vmNamePrefix)"
+        },
+        "labName": {
+            "value": "$(labName)"
+        },
+        "labImageName": {
+            "value": "$(labImageName)"
+        },
+        "size": {
+            "value": "Standard_B2s"
+        },
+        "userName": {
+            "value": "$(vmStudentUserName)"
+        },
+        "userEmailAddress": {
+            "value": "$(userEmailAddress)"
+        },
+        "userObjectId": {
+            "value": "$(invitedUserId)"
+        },
+        "userPrincipalName": {
+            "value": "$(invitedUserPrincipalName)"
+        }
+    }
+}

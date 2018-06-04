@@ -1,0 +1,6 @@
+{
+  "itemDisplayName": "Custom image ARM template",
+  "description": "ARM template for the custom image used in the DB Dev training DevTest Lab.",
+  "summary": "ARM template for the custom image, created from the golden image VHD file which is stored in the storage account associated with the DevTest Lab.",
+  "createdBy": "Ding Liu"
+}
