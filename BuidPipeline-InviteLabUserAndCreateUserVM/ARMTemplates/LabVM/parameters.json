@@ -25,6 +25,9 @@
         },
         "userPrincipalName": {
             "value": "$(invitedUserPrincipalName)"
+        },
+        "vmShortNameSeed": {
+            "value": "$(vmShortNameSeed)"
         }
     }
 }

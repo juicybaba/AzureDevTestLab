@@ -31,12 +31,12 @@
         },
         "costThresholdSettings": {
             "value": {
-                "status": "Disabled",
+                "status": "Enabled",
                 "thresholdValue": "100"
             }
         },
         "maxAllowedVmsPerUser": {
-            "value": 1
+            "value": 999
         },
         "maxAllowedVmsPerLab": {
             "value": 999

@@ -8,10 +8,10 @@
                 "description": "Name of an existing lab where the custom image will be created or updated."
             }
         },
-        "vhdFileUri": {
-            "type": "string",
+        "vhdFileUris": {
+            "type": "array",
             "metadata": {
-                "description": "URI of an existing VHD from which the custom image will be created or updated."
+                "description": "URIs of existing VHD files from which custom images will be created or updated."
             }
         },
         "imageOsType": {
@@ -28,10 +28,10 @@
                 "description": "If the existing VHD is a Windows VHD, then specifies whether the VHD is sysprepped (Note: If the existing VHD is NOT a Windows VHD, then please specify 'false')."
             }
         },
-        "imageName": {
-            "type": "string",
+        "customImageNames": {
+            "type": "array",
             "metadata": {
-                "description": "Name of the custom image being created or updated."
+                "description": "Names of the custom images being created or updated."
             }
         },
         "imageDescription": {
@@ -42,30 +42,26 @@
             }
         }
     },
-    "variables": {
-        "resourceName": "[concat(parameters('labName'), '/', parameters('imageName'))]",
-        "resourceType": "Microsoft.DevTestLab/labs/customimages"
-    },
+    "variables": { },
     "resources": [
         {
-        "comments": "The custome image created from the VHD file",
-        "apiVersion": "2017-04-26-preview",
-        "name": "[variables('resourceName')]",
-        "type": "Microsoft.DevTestLab/labs/customimages",
-        "properties": {
-            "vhd": {
-                "imageName": "[parameters('vhdFileUri')]",
-                "sysPrep": "[parameters('isVhdSysPrepped')]",
-                "osType": "[parameters('imageOsType')]"
+            "comments": "The custome image created from the VHD file",
+            "apiVersion": "2017-04-26-preview",
+            "name": "[concat(parameters('labName'), '/', parameters('customImageNames')[copyIndex('customImageCopy')])]",
+            "type": "Microsoft.DevTestLab/labs/customimages",
+            "properties": {
+                "vhd": {
+                    "imageName": "[parameters('vhdFileUris')[copyIndex('customImageCopy')]]",
+                    "sysPrep": "[parameters('isVhdSysPrepped')]",
+                    "osType": "[parameters('imageOsType')]"
+                },
+                "description": "[parameters('imageDescription')]"
             },
-            "description": "[parameters('imageDescription')]"
-        }
+            "copy": {
+                "name": "customImageCopy",
+                "count": "[length(parameters('vhdFileUris'))]"
+            }
         }
     ],
-    "outputs": {
-        "customImageId": {
-            "type": "string",
-            "value": "[resourceId(variables('resourceType'), parameters('labName'), parameters('imageName'))]"
-        }
-    }
+    "outputs": { }
 }

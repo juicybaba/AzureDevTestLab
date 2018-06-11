@@ -5,17 +5,17 @@
     "labName": {
       "value": "$(labName)"
     },
-    "vhdFileUri": {
-      "value": "$(vhdFileUri)"
+    "vhdFileUris": {
+      "value": "$(vhdFileUris)"
     },
     "imageOsType": {
-      "value": "windows"
+      "value": "Windows"
     },
     "isVhdSysPrepped": {
       "value": true
     },
-    "imageName": {
-      "value": "$(labImageName)"
+    "customImageNames": {
+      "value": "$(customImageNames)"
     },
     "imageDescription": {
       "value": "$(labImageDescription)"

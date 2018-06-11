@@ -59,6 +59,12 @@
         "Run_PowerShell.scriptToRun": {
             "type": "string",
             "defaultValue": "ConfigureWinRM.ps1"
+        },
+        "vmShortNameSeed": {
+            "type": "string",
+            "metadata": {
+                "description": "seed for generating random string as suffix for VM name"
+            }
         }
     },
     "variables": {
@@ -66,7 +72,7 @@
         "labVirtualNetworkId": "[resourceId('Microsoft.DevTestLab/labs/virtualnetworks', parameters('labName'), variables('labVirtualNetworkName'))]",
         "labVirtualNetworkName": "[concat('Dtl', parameters('labName'))]",
         "labImageId": "[resourceId('microsoft.devtestlab/labs/customimages', parameters('labName'), parameters('labImageName'))]",
-        "vmNameSuffix": "[uniquestring(parameters('userEmailAddress'))]",
+        "vmNameSuffix": "[uniquestring(parameters('vmShortNameSeed'))]",
         "vmShortName": "[substring(concat(parameters('vmNamePrefix'), variables('vmNameSuffix')),0,15)]",
         "vmId": "[resourceId ('Microsoft.DevTestLab/labs/virtualmachines', parameters('labName'), variables('vmShortName'))]",
         "vmLongName": "[concat(parameters('labName'), '/', variables('vmShortName'))]",
